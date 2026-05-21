@@ -63,9 +63,7 @@ export function ResultView({ result, onReset }: Props) {
         ? await compositeOnColorBlob(result.resultUrl, bgColor)
         : await (await fetch(result.resultUrl)).blob();
       const file = new File([blob], downloadName, { type: 'image/png' });
-      // @ts-expect-error — canShare not in all lib.dom versions
       if (navigator.canShare?.({ files: [file] })) {
-        // @ts-expect-error — share files supported on mobile Safari/Chrome
         await navigator.share({ files: [file], title: 'CutBG result' });
         return;
       }

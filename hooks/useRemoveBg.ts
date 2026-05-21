@@ -53,7 +53,7 @@ export function useRemoveBg() {
         debug: false,
         device: 'gpu',
         model: 'isnet_fp16',
-        output: { format: 'image/png', quality: 0.8, type: 'foreground' },
+        output: { format: 'image/png', quality: 0.8 },
         progress: (key, current, total) => {
           if (total > 0) {
             const pct = Math.min(100, Math.round((current / total) * 100));
