@@ -1,0 +1,44 @@
+name = "cutbg-api"
+main = "worker/index.ts"
+compatibility_date = "2025-01-15"
+workers_dev = true
+
+# Public, non-secret config. Override per environment as needed.
+[vars]
+ALLOWED_ORIGIN = "http://localhost:3000"
+RATE_LIMIT_PER_HOUR = "20"
+
+# KV namespace for per-IP rate limiting.
+# Create with: wrangler kv:namespace create rate_limits
+# Then paste the returned id below.
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "REPLACE_WITH_RATE_LIMITS_KV_ID"
+
+# KV namespace for coarse usage stats (one entry per UTC day).
+# Create with: wrangler kv:namespace create stats
+[[kv_namespaces]]
+binding = "STATS"
+id = "REPLACE_WITH_STATS_KV_ID"
+
+# Production overrides. Deploy with: wrangler deploy --env production
+[env.production]
+name = "cutbg-api"
+workers_dev = false
+
+[env.production.vars]
+ALLOWED_ORIGIN = "https://cutbg.app"
+RATE_LIMIT_PER_HOUR = "20"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "REPLACE_WITH_PROD_RATE_LIMITS_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "STATS"
+id = "REPLACE_WITH_PROD_STATS_KV_ID"
+
+# Optional: route under your own domain.
+# [[env.production.routes]]
+# pattern = "api.cutbg.app/*"
+# zone_name = "cutbg.app"
