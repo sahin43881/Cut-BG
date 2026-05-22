@@ -2,7 +2,7 @@ const steps = [
   {
     n: 1,
     title: 'Upload',
-    body: 'Drop a JPG, PNG, or WebP — up to 10 MB. No signup, no upload to a server.',
+    body: 'Drop any image — JPG, PNG, WebP, even HEIC from iPhone. Any size. No signup, no upload to a server.',
     accent: 'from-sky-400 to-brand-600',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>

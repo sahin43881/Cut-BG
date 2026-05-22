@@ -39,6 +39,7 @@ const config: Config = {
         'fade-in': 'fadeIn 0.4s ease-out',
         'slide-up': 'slideUp 0.5s ease-out',
         'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'bounce-slow': 'bounceSlow 2.4s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -48,6 +49,10 @@ const config: Config = {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        bounceSlow: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(4px)' },
         },
       },
     },
