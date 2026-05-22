@@ -143,9 +143,13 @@ export function ResultView({ result, onReset }: Props) {
           <figcaption className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             Original
           </figcaption>
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="flex h-72 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50 sm:h-80">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={result.originalUrl} alt="original" className="block h-auto w-full" />
+            <img
+              src={result.originalUrl}
+              alt="original"
+              className="block max-h-full max-w-full object-contain"
+            />
           </div>
         </figure>
         <figure>
@@ -154,7 +158,7 @@ export function ResultView({ result, onReset }: Props) {
           </figcaption>
           <div
             className={[
-              'overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800',
+              'flex h-72 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 sm:h-80',
               bgColor ? '' : 'checkerboard',
             ].join(' ')}
             style={bgColor ? { backgroundColor: bgColor } : undefined}
@@ -163,7 +167,7 @@ export function ResultView({ result, onReset }: Props) {
             <img
               src={result.resultUrl}
               alt="background removed"
-              className="block h-auto w-full"
+              className="block max-h-full max-w-full object-contain"
             />
           </div>
         </figure>

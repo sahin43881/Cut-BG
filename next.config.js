@@ -8,21 +8,23 @@ const nextConfig = {
   transpilePackages: ['@imgly/background-removal', 'onnxruntime-web'],
 
   async headers() {
-    // COOP / COEP enable SharedArrayBuffer, which @imgly/background-removal
-    // uses for multi-threaded WASM. Without these the lib still works but
-    // falls back to single-threaded CPU mode.
+    // COOP / COEP enable SharedArrayBuffer (multi-threaded WASM).
+    // `credentialless` is required instead of `require-corp` because the
+    // @imgly CDN doesn't set Cross-Origin-Resource-Policy on every edge,
+    // and `require-corp` makes those fetches fail on mobile with a
+    // generic "Failed to fetch" error.
     return [
       {
         source: '/(.*)',
         headers: [
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
         ],
       },
     ];
   },
 
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     // Node-only ML deps that onnxruntime-web *optionally* requires — don't try
     // to bundle them into the browser.
     config.resolve.alias = {
@@ -45,11 +47,12 @@ const nextConfig = {
 
     // The onnxruntime-web bundle ships pre-minified `.mjs` chunks that use
     // `import.meta.url` + `createRequire('module')`. The Next.js minifier
-    // tries to re-parse those as plain scripts and throws. Bundle bloat is a
-    // non-issue here — the 30 MB WASM model dominates page weight — so we
-    // disable JS minification globally for production. CSS minification is
-    // unaffected.
-    config.optimization.minimize = false;
+    // tries to re-parse those as plain scripts and throws. Only disable in
+    // production — dev doesn't minify and toggling the flag there can confuse
+    // webpack's chunk graph.
+    if (!dev) {
+      config.optimization.minimize = false;
+    }
 
     return config;
   },
