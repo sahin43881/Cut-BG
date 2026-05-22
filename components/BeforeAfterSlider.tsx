@@ -48,8 +48,12 @@ export function BeforeAfterSlider({
     <div className="flex w-full justify-center">
       <div
         ref={containerRef}
-        className="relative max-w-full select-none overflow-hidden rounded-2xl border border-zinc-200 shadow-xl shadow-brand-900/5 dark:border-zinc-800"
+        className="relative max-w-full touch-none select-none overflow-hidden rounded-2xl border border-zinc-200 shadow-xl shadow-brand-900/5 dark:border-zinc-800"
         onPointerDown={(e) => {
+          // Capture the pointer so subsequent moves/ups come to this element
+          // even if the finger drifts outside — fixes the "drag stops when
+          // I move off the slider" feel on mobile.
+          e.currentTarget.setPointerCapture(e.pointerId);
           dragging.current = true;
           updateFromClientX(e.clientX);
         }}
@@ -103,13 +107,6 @@ export function BeforeAfterSlider({
             </svg>
           </div>
         </div>
-
-        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
-          Original
-        </span>
-        <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
-          Removed
-        </span>
       </div>
     </div>
   );

@@ -258,7 +258,11 @@ export function useRemoveBg() {
       const t0 = performance.now();
       setPhase('processing');
       const resultUrl = URL.createObjectURL(result);
-      const originalUrl = URL.createObjectURL(file);
+      // Use `input` (post-HEIC-decode) for the original preview. If the user
+      // uploaded a HEIC, the raw `file` blob URL is undecodable in Chrome on
+      // Android — the thumbnail would render as a broken image icon. `input`
+      // is the JPEG conversion for HEICs and the unchanged file otherwise.
+      const originalUrl = URL.createObjectURL(input);
       const durationMs = Math.round(performance.now() - t0);
 
       const payload: RemoveBgResult = {
