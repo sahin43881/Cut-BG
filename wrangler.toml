@@ -4,41 +4,28 @@ compatibility_date = "2025-01-15"
 workers_dev = true
 
 # Public, non-secret config. Override per environment as needed.
+# ALLOWED_ORIGIN is a comma-separated list — first match wins, others
+# are echoed back when the request's Origin matches.
 [vars]
-ALLOWED_ORIGIN = "http://localhost:3000"
+ALLOWED_ORIGIN = "https://cut-bg.vercel.app"
 RATE_LIMIT_PER_HOUR = "20"
 
 # KV namespace for per-IP rate limiting.
-# Create with: wrangler kv:namespace create rate_limits
-# Then paste the returned id below.
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "REPLACE_WITH_RATE_LIMITS_KV_ID"
+id = "ed641a28d2ef46e7b8fd86877e9928ae"
 
 # KV namespace for coarse usage stats (one entry per UTC day).
-# Create with: wrangler kv:namespace create stats
 [[kv_namespaces]]
 binding = "STATS"
-id = "REPLACE_WITH_STATS_KV_ID"
+id = "8c915f367a3441a4b4aff7a52c346e3b"
 
-# Production overrides. Deploy with: wrangler deploy --env production
-[env.production]
-name = "cutbg-api"
-workers_dev = false
-
-[env.production.vars]
-ALLOWED_ORIGIN = "https://cutbg.app"
-RATE_LIMIT_PER_HOUR = "20"
-
-[[env.production.kv_namespaces]]
-binding = "RATE_LIMITS"
-id = "REPLACE_WITH_PROD_RATE_LIMITS_KV_ID"
-
-[[env.production.kv_namespaces]]
-binding = "STATS"
-id = "REPLACE_WITH_PROD_STATS_KV_ID"
-
-# Optional: route under your own domain.
+# To add a custom domain later: uncomment, set zone_name to your domain,
+# and deploy with `wrangler deploy --env production`. Create matching prod
+# KV namespaces first via `wrangler kv:namespace create rate_limits --env production`.
+# [env.production]
+# name = "cutbg-api"
+# workers_dev = false
 # [[env.production.routes]]
-# pattern = "api.cutbg.app/*"
-# zone_name = "cutbg.app"
+# pattern = "api.your-domain.com/*"
+# zone_name = "your-domain.com"
