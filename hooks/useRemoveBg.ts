@@ -70,6 +70,30 @@ function friendlyError(err: unknown): Error {
 }
 
 /**
+ * iPhone HEIC photos can't be decoded by Chrome on Android (no native HEIC
+ * codec). We sniff for HEIC by MIME or filename and route through `heic-to`,
+ * which decodes via WASM in the browser, before the regular `<img>` path.
+ *
+ * Loaded dynamically so the ~700 KB decoder bundle doesn't ship to users who
+ * never upload a HEIC.
+ */
+function isHeic(file: File): boolean {
+  const mime = (file.type || '').toLowerCase();
+  if (mime === 'image/heic' || mime === 'image/heif' || mime === 'image/heic-sequence') {
+    return true;
+  }
+  const name = file.name.toLowerCase();
+  return name.endsWith('.heic') || name.endsWith('.heif');
+}
+
+async function decodeHeic(file: File): Promise<File> {
+  const { heicTo } = await import('heic-to');
+  const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
+  const baseName = file.name.replace(/\.[^.]+$/, '') || 'image';
+  return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' });
+}
+
+/**
  * Re-encode any user upload to a clean PNG before the model sees it. Two
  * problems this solves:
  *
@@ -181,12 +205,24 @@ export function useRemoveBg() {
       const model = mobile ? 'isnet_quint8' : 'isnet_fp16';
       const device: 'cpu' | 'gpu' = gpu ? 'gpu' : 'cpu';
 
+      // HEIC photos from iPhones aren't decodable by Chrome on Android — run
+      // them through a WASM decoder first to get a JPEG, then normalize.
+      // Non-HEIC files skip this step (and the 700 KB decoder chunk).
+      let input = file;
+      if (isHeic(file)) {
+        try {
+          input = await decodeHeic(file);
+        } catch (err) {
+          throw friendlyError(err);
+        }
+      }
+
       // Normalize to a guaranteed-decodable, size-bounded PNG. Without this,
       // phone-camera HEIC/AVIF and oversize photos crash inside the library's
       // `createImageBitmap` call with "source image could not be decoded".
       let normalized: File;
       try {
-        normalized = await normalizeImage(file);
+        normalized = await normalizeImage(input);
       } catch (err) {
         throw friendlyError(err);
       }
