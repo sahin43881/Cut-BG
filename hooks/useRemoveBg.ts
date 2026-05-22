@@ -200,9 +200,15 @@ export function useRemoveBg() {
       const mobile = isMobile();
       const gpu = !mobile && (await hasWebGPU());
 
-      // Mobile gets the quantized ~10 MB model and CPU inference — smaller
-      // download, lower memory, works on every phone.
-      const model = mobile ? 'isnet_quint8' : 'isnet_fp16';
+      // Model selection trades download size for mask quality.
+      //   isnet         (~80 MB, fp32) — sharpest edges, used on desktop
+      //   isnet_fp16    (~40 MB, fp16) — close to fp32 quality, mobile-safe
+      //   isnet_quint8  (~10 MB, int8) — visible artifacts on hair/edges
+      // We previously shipped quint8 to mobile for fast first-load, but the
+      // dropoff in quality (spotty / "noisy" mask edges) was very visible.
+      // fp16 is the sweet spot — slower first-run download (cached after),
+      // dramatically cleaner output.
+      const model = mobile ? 'isnet_fp16' : 'isnet';
       const device: 'cpu' | 'gpu' = gpu ? 'gpu' : 'cpu';
 
       // HEIC photos from iPhones aren't decodable by Chrome on Android — run
@@ -232,7 +238,13 @@ export function useRemoveBg() {
           debug: false,
           device: dev,
           model,
-          output: { format: 'image/png', quality: 0.8 },
+          // `rescale: true` (the default) tells the library to resize the
+          // input to the model's preferred resolution and upscale the mask
+          // back. We're explicit here so the contract is visible.
+          rescale: true,
+          // PNG is lossless, so quality only affects intermediate encode
+          // steps. Use 1.0 to keep the alpha mask crisp around hair/edges.
+          output: { format: 'image/png', quality: 1.0 },
           fetchArgs: { mode: 'cors', credentials: 'omit', cache: 'force-cache' },
           progress: (key, current, total) => {
             if (total > 0) {

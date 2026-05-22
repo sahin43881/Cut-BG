@@ -10,6 +10,10 @@ type Props = {
   afterBg?: string | null;
 };
 
+// Pixels of horizontal movement required before a touch turns into a drag.
+// Below this, the gesture is treated as a tap or the start of a page scroll.
+const DRAG_THRESHOLD_PX = 6;
+
 export function BeforeAfterSlider({
   beforeSrc,
   afterSrc,
@@ -19,6 +23,7 @@ export function BeforeAfterSlider({
   const containerRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(50);
   const dragging = useRef(false);
+  const pointerStart = useRef<{ x: number; y: number; type: string } | null>(null);
 
   const updateFromClientX = useCallback((clientX: number) => {
     const el = containerRef.current;
@@ -30,17 +35,42 @@ export function BeforeAfterSlider({
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
-      if (!dragging.current) return;
+      const start = pointerStart.current;
+      if (!start) return;
+
+      // For touch input, wait until the user has moved horizontally past
+      // the threshold before claiming the drag. This lets a vertical swipe
+      // scroll the page even if it starts on the slider, and prevents a
+      // stray tap from snapping the divider.
+      if (!dragging.current) {
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        if (start.type === 'touch') {
+          // If the user is clearly scrolling vertically, abandon the drag.
+          if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > DRAG_THRESHOLD_PX) {
+            pointerStart.current = null;
+            return;
+          }
+          if (Math.abs(dx) < DRAG_THRESHOLD_PX) return;
+        }
+        dragging.current = true;
+      }
+
       updateFromClientX(e.clientX);
     };
+
     const onUp = () => {
       dragging.current = false;
+      pointerStart.current = null;
     };
+
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
     return () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
     };
   }, [updateFromClientX]);
 
@@ -48,14 +78,20 @@ export function BeforeAfterSlider({
     <div className="flex w-full justify-center">
       <div
         ref={containerRef}
-        className="relative max-w-full touch-none select-none overflow-hidden rounded-2xl border border-zinc-200 shadow-xl shadow-brand-900/5 dark:border-zinc-800"
+        // `touch-pan-y` keeps native vertical scroll working when the touch
+        // starts on the slider. Horizontal pans still come to us so the
+        // drag-to-compare gesture works.
+        className="relative max-w-full touch-pan-y select-none overflow-hidden rounded-2xl border border-zinc-200 shadow-xl shadow-brand-900/5 dark:border-zinc-800"
         onPointerDown={(e) => {
-          // Capture the pointer so subsequent moves/ups come to this element
-          // even if the finger drifts outside — fixes the "drag stops when
-          // I move off the slider" feel on mobile.
           e.currentTarget.setPointerCapture(e.pointerId);
-          dragging.current = true;
-          updateFromClientX(e.clientX);
+          pointerStart.current = { x: e.clientX, y: e.clientY, type: e.pointerType };
+          // Mouse clicks should snap the divider immediately (familiar
+          // desktop behaviour). Touches wait for the drag threshold so an
+          // accidental tap doesn't yank the slider to the edge.
+          if (e.pointerType === 'mouse') {
+            dragging.current = true;
+            updateFromClientX(e.clientX);
+          }
         }}
       >
         {/* Backdrop for the "after" image: checkerboard for transparency,
@@ -95,7 +131,7 @@ export function BeforeAfterSlider({
           style={{ left: `calc(${pos}% - 1px)` }}
         >
           <div className="h-full w-0.5 bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.15)]" />
-          <div className="absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-zinc-800 shadow-lg ring-1 ring-black/10">
+          <div className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-zinc-800 shadow-lg ring-1 ring-black/10">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M8 6L3 12l5 6M16 6l5 6-5 6"

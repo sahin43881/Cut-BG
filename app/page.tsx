@@ -101,7 +101,7 @@ export default function HomePage() {
                 </div>
                 <ProgressBar value={progress} />
                 <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-                  The first run downloads a ~30 MB AI model. After that it&apos;s instant and
+                  The first run downloads the AI model (~40 MB on phones, ~80 MB on desktop). After that it&apos;s instant and
                   works offline.
                 </p>
               </div>
