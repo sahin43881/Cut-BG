@@ -2,14 +2,15 @@
 
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 
-// 50 MB upper bound — anything past this is almost always a phone burst-mode
-// raw and will OOM the canvas anyway. The model's own normalizer downscales
-// to 2048 px, so file size in MB is not the same as memory cost.
-const MAX_BYTES = 50 * 1024 * 1024;
-// We accept *any* image MIME (browsers report HEIC as `image/heic`, AVIF as
+// No hard size cap — the hook downscales to 2048 px during normalization so
+// memory cost is bounded regardless of file size on disk. If the browser
+// itself can't allocate enough memory the decode step will fail with a clear
+// message; that's preferable to rejecting valid uploads up front.
+//
+// Accept any image MIME (browsers report HEIC as `image/heic`, AVIF as
 // `image/avif`, sometimes empty on Android share-intent). The hook re-encodes
 // through <img>+canvas anyway, so if the browser can render it at all we can
-// process it. Truly unsupported formats fail at decode with a clear message.
+// process it.
 const ACCEPTED_PREFIX = 'image/';
 
 type Props = {
@@ -27,9 +28,6 @@ export function UploadZone({ onFile, disabled }: Props) {
     // the decoder figure it out rather than rejecting potentially-valid files.
     if (file.type && !file.type.startsWith(ACCEPTED_PREFIX)) {
       return 'Please choose an image file.';
-    }
-    if (file.size > MAX_BYTES) {
-      return `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max is 50 MB.`;
     }
     return null;
   }, []);
@@ -126,15 +124,10 @@ export function UploadZone({ onFile, disabled }: Props) {
         </button>
 
         <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
-          {['JPG', 'PNG', 'WebP', 'HEIC'].map((fmt) => (
-            <span
-              key={fmt}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-0.5 font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-            >
-              {fmt}
-            </span>
-          ))}
-          <span className="text-zinc-400 dark:text-zinc-500">· up to 50 MB</span>
+          <span className="rounded-md border border-zinc-200 bg-white px-2 py-0.5 font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            Any image format
+          </span>
+          <span className="text-zinc-400 dark:text-zinc-500">· any size</span>
         </div>
 
         <input
